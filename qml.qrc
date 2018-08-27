@@ -1,0 +1,17 @@
+<RCC>
+    <qresource prefix="/">
+        <file>qml_maps/DisplayRect.qml</file>
+        <file>qml_maps/FileNameDisplay.qml</file>
+        <file>qml_maps/FlightMap.qml</file>
+        <file>qml_maps/FlightMapViewer.qml</file>
+        <file>qml_maps/MapLines.qml</file>
+        <file>qml_maps/MarkerItem.qml</file>
+        <file>qml_maps/icons/Insight black icon.png</file>
+        <file>qml_maps/icons/Insight yellow icon.png</file>
+        <file>qml_maps/icons/Sparrow black icon.png</file>
+        <file>qml_maps/icons/Sparrow yellow icon.png</file>
+        <file>qml_maps/VehicleIcon.qml</file>
+        <file>qml_maps/VehicleData.qml</file>
+        <file>qml_maps/LandingItem.qml</file>
+    </qresource>
+</RCC>
