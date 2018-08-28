@@ -29,6 +29,15 @@
      <height>21</height>
     </rect>
    </property>
+   <widget class="QMenu" name="menuTestCases">
+    <property name="title">
+     <string>TestCases</string>
+    </property>
+    <addaction name="actionDrone_Registration"/>
+    <addaction name="actionGeoFence_Breach"/>
+    <addaction name="actionNo_Fly_Zone"/>
+   </widget>
+   <addaction name="menuTestCases"/>
   </widget>
   <widget class="QToolBar" name="mainToolBar">
    <attribute name="toolBarArea">
@@ -39,6 +48,21 @@
    </attribute>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
+  <action name="actionGeoFence_Breach">
+   <property name="text">
+    <string>GeoFence Breach</string>
+   </property>
+  </action>
+  <action name="actionDrone_Registration">
+   <property name="text">
+    <string>Drone Registration</string>
+   </property>
+  </action>
+  <action name="actionNo_Fly_Zone">
+   <property name="text">
+    <string>No-Fly Zone</string>
+   </property>
+  </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
  <resources/>

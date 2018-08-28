@@ -6,38 +6,42 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    ui->actionDrone_Registration->setVisible(false);
     setWindowTitle("Air Traffic Controller");
     showMap();
-    setUpDroneEnv(3);
+    setUpDroneEnv(5);
 
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
+    if(regn != Q_NULLPTR){
+        delete regn;
+    }
 }
 
 void MainWindow::showMap(){
 
-    mapView = new QQuickView;
-    mapView->setSource(QUrl(QStringLiteral("qrc:/qml_maps/FlightMapViewer.qml")));
+    atcView = new QQuickView;
+    atcView->setSource(QUrl(QStringLiteral("qrc:/qml_maps/FlightMapViewer.qml")));
 
-    mapView->setResizeMode(QQuickView::SizeRootObjectToView);
+    atcView->setResizeMode(QQuickView::SizeRootObjectToView);
 
-    if (mapView->status() == QQuickView::Error) {
-        qWarning() << mapView->errors();
+    if (atcView->status() == QQuickView::Error) {
+        qWarning() << atcView->errors();
         return;
     }
-    mapwidget = QWidget::createWindowContainer(mapView, this);
+    mapwidget = QWidget::createWindowContainer(atcView, this);
     ui->maingridLayout->addWidget(mapwidget);
     setFocusProxy(mapwidget); // focus container widget when top level widget is focused
     //resize(size);
     setFocusPolicy(Qt::NoFocus);
 
-    mapView->rootObject()->setProperty("width",this->width());
-    mapView->rootObject()->setProperty("height",this->height());
-    flightmapitem = mapView->rootObject()->findChild<QQuickItem*>("map_main");
-    mapView->rootContext()->setContextProperty("_mainWindow",this);
+    atcView->rootObject()->setProperty("width",this->width());
+    atcView->rootObject()->setProperty("height",this->height());
+    flightmapitem = atcView->rootObject()->findChild<QQuickItem*>("map_main");
+    atcView->rootContext()->setContextProperty("_controlWindow",this);
 
     //    addMapTypes();
     //    connect(this,SIGNAL(MapTypeChanged(QVariant)),flightmapitem,SLOT(changeMapType(QVariant)));
@@ -50,68 +54,12 @@ void MainWindow::showMap(){
 void MainWindow::setUpDroneEnv(int numDrones)
 {
 
-    qDebug() << "numDrones" << numDrones;
-    UAVList.clear();
-    for(int i=0; i< numDrones;i++){
-
-        QGeoCoordinate homeLocn = getRandomHomeLocn(1300,800,numDrones+10,1000+i);
-
-        if(!homeLocn.isValid()){
-            qDebug() << homeLocn << homeLocn.isValid()<< "homelocns";
-            homeLocn = getRandomHomeLocn(1300,800,numDrones+5,(3000+i));
-        }
-        //        UAVNs::UAV uav =  uav(i,"qrc:/qml_maps/icons/Insight yellow icon.png", UAVNs::UAV::multiCopter,homeLocn);
-        UAVNs::UAV *uav = new UAVNs::UAV();
-        uav->setID(i);
-        uav->setIconAddress("qrc:/qml_maps/icons/Insight yellow icon.png");
-        uav->setUavType(UAVNs::UAV::multiCopter);
-        uav->setHomeLocn(QVariant::fromValue(homeLocn));
-        QVariantList flPath = generateRandomFlightPath(homeLocn,3000+i);
-        uav->setFlightPath(flPath);
-        uav->setCurrentLocn(homeLocn);
-        uav->setNextLocn(flPath[1].value<QGeoCoordinate>());
-        uav->setDestnLocn(flPath.last().value<QGeoCoordinate>());
-
-        uav->setHorSpeed(5);
-        uav->setIndexReached(0);
-        UAVList.append(uav);
-        uavListCpp.push_back(uav);
-        //        qDebug() << uav.homeLocn() <<"uav.homeLocn";
-        //        QVariant uavV = QVariant::fromValue(uav);
-        //        qDebug() << uavV.value<UAVNs::UAV>().ID() << "ID";
-
-    }
-
-    flightmapitem->setProperty("uavList",QVariant::fromValue(UAVList));
-    QMetaObject::invokeMethod(flightmapitem,"dispUAVsFromList");
-
-//    startSimulation();
+    QList<QGeoCoordinate> homeLocns = getRandomHomeLocn(1300,800,numDrones+10,50,5);
 }
 
-QGeoCoordinate MainWindow::getRandomHomeLocn(qreal width, qreal height, qreal g, int seed)
+QList<QGeoCoordinate> MainWindow::getRandomHomeLocn(qreal width, qreal height, qreal g, int seed, int numDrones)
 {
-    //a = width, b = height
-    qreal wm,hm;
-    if(width > height){
-        hm = g;
-        wm = qFloor(g*width/height);
-    }
-    else{
-        wm = g;
-        hm = qFloor(g*height/width);
-    }
 
-    float wrand,hrand;
-    srand(seed);
-    wrand = static_cast <float> (rand()) / (static_cast <float> (RAND_MAX/wm));
-    hrand = static_cast <float> (rand()) / (static_cast <float> (RAND_MAX/hm));
-    qreal wv = width * wrand/wm;
-    qreal hv = height* hrand/hm;
-    QVariant coordVar;
-
-    QMetaObject::invokeMethod(flightmapitem,"getCoordinateFromPt",Q_RETURN_ARG(QVariant, coordVar),Q_ARG(QVariant, QVariant::fromValue(wv)), Q_ARG(QVariant, QVariant::fromValue(hv)));
-
-    return coordVar.value<QGeoCoordinate>();
 }
 
 QVariantList MainWindow::generateRandomFlightPath(QGeoCoordinate home,int seed)
@@ -196,7 +144,6 @@ QVariantList MainWindow::generateRandomFlightPath(QGeoCoordinate home,int seed)
 
 void MainWindow::startSimulation()
 {
-
     qDebug() << uavListCpp[0]->currentLocn() << "startSimulation";
     uavListCpp[0]->currentLocn().setAltitude(130);
 
@@ -209,17 +156,35 @@ void MainWindow::startSimulation()
 
 }
 
+
+
 void MainWindow::goToNextLocn()
 {
 
-    //    qDebug() << uavListCpp[0]->currentLocn().distanceTo(uavListCpp[0]->nextLocn()) <<  "goToNextLocn";
-    if(uavListCpp[0]->currentLocn().distanceTo(uavListCpp[0]->nextLocn()) > 5){
+    //        qDebug() << uavListCpp[0]->currentLocn().distanceTo(uavListCpp[0]->nextLocn()) <<  "goToNextLocn";
+
+    //    if(uavListCpp[0]->nextLocn().altitude() -uavListCpp[0]->currentLocn().altitude() > 10  ){
+    //        qDebug() << uavListCpp[0]->currentLocn().altitude();
+    //        double alt = 10 + uavListCpp[0]->currentLocn().altitude();
+    //        uavListCpp[0]->currentLocn().setAltitude(alt);
+    //        uavListCpp[0]->nextLocn().setAltitude(alt+10);
+    //        QMetaObject::invokeMethod(flightmapitem,"vehDataChanged",Q_ARG(QVariant,qVariantFromValue(uavListCpp[0]->currentLocn())));
+
+    //    }
+    /*else*/ if(uavListCpp[0]->currentLocn().distanceTo(uavListCpp[0]->nextLocn()) > 10){
         QGeoCoordinate nLocn;
-        double dist = 5;
+        double dist = 10;
         double azim = uavListCpp[0]->currentLocn().azimuthTo(uavListCpp[0]->nextLocn());
         nLocn = uavListCpp[0]->currentLocn().atDistanceAndAzimuth(dist,azim);
         uavListCpp[0]->setCurrentLocn(nLocn);
         QMetaObject::invokeMethod(flightmapitem,"vehDataChanged",Q_ARG(QVariant,qVariantFromValue(nLocn)));
+        if(nLocn.distanceTo(uavListCpp[0]->destnLocn()) < 10){
+            timer->stop();
+            qDebug() << "reached destn";
+            if(currentTestCase() =="GeoFence Breach" ){
+                QMetaObject::invokeMethod(flightmapitem,"displayGeoFenceAfterBreach");
+            }
+        }
     }
     else{
         qDebug() << "reached" << uavListCpp[0]->indexReached();
@@ -235,6 +200,185 @@ void MainWindow::goToNextLocn()
         }
 
     }
+
+    if(currentTestCase() == "GeoFence Breach"){
+        if(!checkLocnLiesinGeoFence(uavListCpp[0]->currentLocn()) && !geofenceBreached)
+        {
+            qDebug() << "geoFence Breach";
+            QMetaObject::invokeMethod(flightmapitem,"displayGeoFenceBreach");
+            geofenceBreached = true;
+        }
+    }
 }
 
 
+bool MainWindow::checkLocnLiesinGeoFence(QGeoCoordinate coord)
+{
+
+    QGeoCoordinate circleCenter;
+    circleCenter = uavListCpp[0]->homeLocn().value<QGeoCoordinate>();
+
+    double radius = 500;
+    double dist = circleCenter.distanceTo(coord);
+    if(dist < radius)
+        return true;
+    return false;
+}
+
+void MainWindow::sendUAVToLocn(QVariant coordvar)
+{
+    qDebug() << coordvar<< "sendUAVToLocn";
+    uavListCpp[0]->setNextLocn(coordvar.value<QGeoCoordinate>());
+    uavListCpp[0]->setDestnLocn(coordvar.value<QGeoCoordinate>());
+
+
+}
+
+
+
+void MainWindow::on_actionGeoFence_Breach_triggered()
+{
+
+    UAVList.clear();
+    uavListCpp.clear();
+    setCurrentTestCase("GeoFence Breach");
+    flightmapitem->setProperty("testCase",currentTestCase());
+    UAVNs::UAV *geoFenceUav = new UAVNs::UAV();;
+    QGeoCoordinate homeLocn = QGeoCoordinate( 42.384661,-83.040787,0);
+
+    geoFenceUav->setHomeLocn(QVariant::fromValue(homeLocn));
+    geoFenceUav->setCurrentLocn(homeLocn);
+    geoFenceUav->setID(1);
+    geoFenceUav->setIconAddress("qrc:/qml_maps/icons/Insight yellow icon.png");
+    geoFenceUav->setUavType(UAVNs::UAV::multiCopter);
+    QVariantList flightPath;
+    flightPath.push_back(geoFenceUav->homeLocn());
+    QGeoCoordinate coord = homeLocn;
+    coord.setAltitude(100);
+    flightPath.push_back(QVariant::fromValue(coord));
+    //p1
+    coord =  QGeoCoordinate(42.384206,-83.040977,100);
+    flightPath.push_back(QVariant::fromValue(coord));
+    //p2
+    coord =  QGeoCoordinate( 42.384648,-83.042726,100);
+    flightPath.push_back(QVariant::fromValue(coord));
+    //p3
+    coord =  QGeoCoordinate(  42.385225,-83.046163,100);
+    flightPath.push_back(QVariant::fromValue(coord));
+    //p4
+    coord =  QGeoCoordinate(   42.383961,-83.050965,100);
+    flightPath.push_back(QVariant::fromValue(coord));
+
+    //p5
+    coord =  QGeoCoordinate(    42.382192,-83.049815,100);
+    flightPath.push_back(QVariant::fromValue(coord));
+
+    //p6
+    coord =  QGeoCoordinate(    42.382423,-83.045533,100);
+    flightPath.push_back(QVariant::fromValue(coord));
+
+    //p7
+    coord =  QGeoCoordinate(    42.382887,-83.041158,100);
+    flightPath.push_back(QVariant::fromValue(coord));
+
+
+    geoFenceUav->setFlightPath(flightPath);
+    geoFenceUav->setIndexReached(0);
+    geoFenceUav->setNextLocn(flightPath[1].value<QGeoCoordinate>());
+    geoFenceUav->setDestnLocn(flightPath.last().value<QGeoCoordinate>());
+    geoFenceUav->setHorSpeed(5);
+    geoFenceUav->setVertSpeed(5);
+    UAVList.append(geoFenceUav);
+    uavListCpp.push_back(geoFenceUav);
+    flightmapitem->setProperty("uavList",QVariant::fromValue(UAVList));
+    QMetaObject::invokeMethod(flightmapitem,"dispUAVsFromList");
+    startSimulation();
+}
+
+void MainWindow::on_actionDrone_Registration_triggered()
+{
+
+    if(regn == Q_NULLPTR)
+        regn = new DroneRegistrationForm();
+    connect(regn,SIGNAL(droneFormSubmitted()),this,SLOT(onDroneRegnFormSubmitted()));
+    regn->move(desktop->screen()->rect().center() - regn->rect().center());
+    regn->show();
+
+
+}
+
+void MainWindow::onDroneRegnFormSubmitted()
+{
+
+    return;
+}
+
+void MainWindow::on_actionNo_Fly_Zone_triggered()
+{
+
+    QFile flightPlanFile;
+    QString path = QDir::homePath() + "/AirTrafficController/nofly.txt";
+    flightPlanFile.setFileName(path);
+
+    if(!flightPlanFile.open(QIODevice::ReadOnly)){
+        qDebug() << "unable to read file";
+    }
+    QTextStream read;
+    QVariantList noFlyFlightPlan,noFlyZonePolyCoords;
+    read.setDevice(&flightPlanFile);
+    QString line;
+    while(!read.atEnd()){
+        line = read.readLine();
+        QStringList coordinateList = line.split("\t");
+        if(coordinateList.length() == 4){
+            QGeoCoordinate coord;
+            coord.setLatitude(coordinateList[1].toDouble());
+            coord.setLongitude(coordinateList[2].toDouble());
+            noFlyFlightPlan.push_back(qVariantFromValue(coord));
+
+        }
+        else if(coordinateList.length() == 2){
+            QGeoCoordinate coord;
+            coord.setLatitude(coordinateList[0].toDouble());
+            coord.setLongitude(coordinateList[1].toDouble());
+            noFlyZonePolyCoords.push_back(qVariantFromValue(coord));
+
+        }
+    }
+    flightPlanFile.close();
+    QVariantList path2,path3;
+    path3.push_back(qVariantFromValue(QGeoCoordinate(42.385590,-83.047605)));
+    path3.push_back(qVariantFromValue(QGeoCoordinate(42.379502,-83.052600)));
+    path2 = readFlightPlanfromfile(QDir::homePath() + "/AirTrafficController/fplan1.txt");
+    QMetaObject::invokeMethod(flightmapitem,"dispNoFlyZoneTestCase",Q_ARG(QVariant,noFlyFlightPlan),Q_ARG(QVariant,noFlyZonePolyCoords),Q_ARG(QVariant,path2),Q_ARG(QVariant,path3));
+
+}
+
+
+QVariantList MainWindow::readFlightPlanfromfile(QString filename)
+{
+
+    QFile file;
+    file.setFileName(filename);
+    if(!file.open(QIODevice::ReadOnly)){
+        qDebug() << "unable to read" << file.errorString();
+    }
+    QTextStream read;
+    read.setDevice(&file);
+    QVariantList path;
+    QString line;
+    while(!read.atEnd()){
+        line = read.readLine();
+        QStringList coordinateList = line.split("\t");
+        if(coordinateList.length() == 4){
+            QGeoCoordinate coord;
+            coord.setLatitude(coordinateList[1].toDouble());
+            coord.setLongitude(coordinateList[2].toDouble());
+            path.push_back(qVariantFromValue(coord));
+
+        }
+    }
+    file.close();
+    return path;
+
+}

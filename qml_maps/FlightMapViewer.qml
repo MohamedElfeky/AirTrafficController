@@ -27,6 +27,24 @@ Rectangle{
     }
 
 
+    Rectangle{
+        id:_noflyzonetitlerect
+        color: "transparent"
+        visible: false
+        width:_text.width + 20
+        height: _text.height+ 10
+        Text{
+            id:_text
+            text : "No-FlyZone"
+            font.bold: true
+            verticalAlignment: Text.AlignVCenter
+            horizontalAlignment: Text.AlignHCenter
+            font.pointSize: 12
+            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.verticalCenter: parent.verticalCenter
+
+        }
+    }
 
 
     SpinBox{

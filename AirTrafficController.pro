@@ -26,14 +26,20 @@ DEFINES += QT_DEPRECATED_WARNINGS
 SOURCES += \
         main.cpp \
         mainwindow.cpp \
-    uav.cpp
+    uav.cpp \
+    droneregistrationform.cpp \
+    droneregnprocess.cpp
 
 HEADERS += \
         mainwindow.h \
-    uav.h
+    uav.h \
+    droneregistrationform.h \
+    droneregnprocess.h
 
 FORMS += \
-        mainwindow.ui
+        mainwindow.ui \
+    droneregistrationform.ui \
+    droneregnprocess.ui
 
 RESOURCES += \
     qml.qrc \

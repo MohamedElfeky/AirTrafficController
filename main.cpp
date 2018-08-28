@@ -6,6 +6,7 @@
 #include <QDir>
 #include<QNetworkProxy>
 #include "uav.h"
+#include <QDir>
 
 int main(int argc, char *argv[])
 {
@@ -13,6 +14,13 @@ int main(int argc, char *argv[])
     QNetworkProxyFactory::setUseSystemConfiguration(true);
     QFile f(":/qdarkstyle/style.qss");
     qmlRegisterType<UAVNs::UAV>("UAV",1,0,"UAV");
+
+    QDir atcDir;
+    atcDir.setPath(QDir::homePath() + "/AirTrafficController");
+
+    if(!atcDir.exists()){
+        atcDir.mkpath(atcDir.path());
+    }
 
 
     MainWindow w;

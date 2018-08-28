@@ -43,12 +43,14 @@ Map{
     property var centerCoordsList: []
     property var fileNameDataDisplayList: []
 
+    property var currentCoord
     //atc
     property var uavList: []
     property var vehicleIconList: []
     property var idMarkersList: []
     property var pathMarkersList: []
     property var landMarkersList: []
+    property string testCase: ""
     signal coordsAdded()
 
 
@@ -280,6 +282,7 @@ Map{
 
 
     function dispUAVsFromList(){
+        console.log("dispUAVsFromList")
         for(var i=0; i< uavList.length;i++){
             var comp = Qt.createComponent("VehicleIcon.qml");
             var comp1 = Qt.createComponent("VehicleData.qml");
@@ -318,10 +321,153 @@ Map{
 
         }
 
+        if(testCase == "GeoFence Breach"){
+
+            displayGeoFence();
+        }
+
     }
 
     function vehDataChanged(coord){
         vehicleIconList[0].coordinate = coord
+        currentCoord = coord
+    }
+
+
+    function displayGeoFence(){
+
+        _geoFence.center = uavList[0].homeLocn
+        _geoFence.radius = 500
+        _geoFence.visible = true
+
+    }
+
+    function displayGeoFenceBreach(){
+        _geoFence.color = "red"
+        _geoFence.border.color = "red"
+        var dataDisplayList = []
+        var comp = Qt.createComponent("DisplayRect.qml");
+        var item;
+        if (comp.status === Component.Ready) {
+            item = comp.createObject(_map);
+            //            item.imageName = "Sending Drone to nearest Landing Location L1"
+            //            item.coordinate = currentCoord
+            item.coord = "Sending Drone to nearest Landing Location L1. \nGeoFence Breached"
+            dataDisplayList.push(item)
+            item.visible =true
+            _map.addMapItem(item)
+        }
+        // displaying landing locns
+        var c1, c2
+        c1 = QtPositioning.coordinate(  42.384979,-83.045731)
+        c2 = QtPositioning.coordinate(  42.384624,-83.043696)
+        var landComp = Qt.createComponent("LandingItem.qml");
+        var landComp1 = Qt.createComponent("LandingItem.qml");
+        var item1 ,item2;
+        if (landComp.status === Component.Ready) {
+            item1 = landComp.createObject(_map);
+
+            item2 = landComp1.createObject(_map);
+            item1.uavID = "L1"
+            item2.uavID = "L2"
+            item1.coordinate = c1
+            item2.coordinate = c2
+            item1.visible = true
+            item2.visible = true
+            _map.addMapItem(item1)
+            _map.addMapItem(item2)
+        }
+        dataDisplayList[0].anchors.top = item1.bottom
+        dataDisplayList[0].anchors.topMargin = 10
+        dataDisplayList[0]. anchors.horizontalCenter = item1.horizontalCenter
+        dataDisplayList[0].z = item1.z + 1
+        _controlWindow.sendUAVToLocn(c1)
+
+    }
+
+    function displayGeoFenceAfterBreach(){
+        _geoFence.color = "transparent"
+        _geoFence.border.color = "#00ADEF"
+    }
+
+
+    function dispNoFlyZoneTestCase(flightPlan,zoneCoords,plan2,plan3){
+
+        showFlightPlan(flightPlan,"1")
+        showNoFlyZone(zoneCoords)
+        showFlightPlan(plan2,"2")
+        showFlightPlan(plan3,"3")
+    }
+
+
+    function showFlightPlan(flightPlan,index){
+        var component = Qt.createComponent("MapLines.qml");
+        var comp = Qt.createComponent("LandingItem.qml");
+        if (component.status === Component.Ready) {
+            var contourItem = component.createObject(_map);
+            contourItem.col = Qt.rgba(Math.random(),Math.random(),Math.random(),1);
+
+            contourItem.pathList = flightPlan
+            _map.addMapItem(contourItem)
+            lineMarkersList.push(contourItem)
+            var litem = comp.createObject(_map);
+            //            console.log(flightPlan.last())
+            litem.coordinate = flightPlan[flightPlan.length -1]
+            litem.uavID = "D" + index
+            _map.addMapItem(litem)
+            var rectcomp = Qt.createComponent("DisplayRect.qml");
+            var dispitem;
+            if (rectcomp.status === Component.Ready) {
+                dispitem = rectcomp.createObject(_map);
+
+            }
+
+            if(index === "1"){
+                dispitem.height = 75
+                dispitem.coord = litem.uavID + " Flight plan Rejected. \nReason: Flight plan lies in a No-Fly Zone."
+                dispitem.visible =true
+                _map.addMapItem(dispitem)
+            }
+            else{
+                dispitem.coord =litem.uavID + " Flight plan accepted"
+                dispitem.visible =true
+                _map.addMapItem(dispitem)
+            }
+            dispitem.anchors.top = litem.bottom
+            dispitem.anchors.topMargin = 10
+            dispitem. anchors.horizontalCenter = litem.horizontalCenter
+            dispitem.z = litem.z + 1
+        }
+
+
+    }
+
+
+    function showNoFlyZone(zoneCoords){
+        _noFlyZone.path = zoneCoords
+        _noFlyZone.visible = true
+
+
+
+    }
+
+    MapCircle{
+        id:_geoFence
+        visible: false
+        color: "transparent"
+        border.color: "#00ADEF"
+        border.width: 20
+        opacity: 0.3
+
+    }
+
+    MapPolygon{
+        id:_noFlyZone
+        visible: false
+        border.color: "red"
+        border.width: 5
+        z: 5
+        color: "transparent"
     }
 
     Component.onCompleted: {

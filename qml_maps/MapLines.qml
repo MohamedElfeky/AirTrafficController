@@ -12,7 +12,7 @@ MapPolyline{
     property string col: "red"
     property var pathList: []
     //    property string fileName: ""
-    line.width: 2.0
+    line.width: 2.5
     line.color: col
     path: pathList
     //    MouseArea{
