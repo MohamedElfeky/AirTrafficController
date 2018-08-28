@@ -51,6 +51,9 @@ Map{
     property var pathMarkersList: []
     property var landMarkersList: []
     property string testCase: ""
+    property var dataDisplayList: []
+    property var geolandMarkersList: []
+    property var dispitemList: []
     signal coordsAdded()
 
 
@@ -92,119 +95,6 @@ Map{
         var lng = convertDMSToDD(parseFloat(lonDeg),parseFloat(lonmin),parseFloat(lonSec),lonDirn);
         //        console.log(lat,lng,alt)
         return lat + "," + lng + "," + alt
-    }
-
-    function addCoordstomap(){
-
-        if(coordsListtoDisplay.length == imageNamesList.length){
-
-            for(var i=0;i< coordsListtoDisplay.length;i++){
-
-                var comp = Qt.createComponent("DisplayRect.qml");
-                if (comp.status === Component.Ready) {
-                    var item = comp.createObject(_map);
-                    item.imageName = imageNamesList[i]
-                    item.coord = coordsStringList[i]
-                    dataDispList.push(item)
-                }
-
-
-                var component = Qt.createComponent("MarkerItem.qml");
-                if (component.status === Component.Ready) {
-                    var markerItem = component.createObject(_map);
-                    markerItem.coordinate =  coordsListtoDisplay[i]
-                    markerItem.index = i
-                    markerItem.imageSize = 10
-                    markerItem.dispRect =dataDispList[i]
-                    dataDispList[i].anchors.top = markerItem.bottom
-                    dataDispList[i].anchors.topMargin = 10
-                    dataDispList[i]. anchors.horizontalCenter = markerItem.horizontalCenter
-                    dataDispList[i].z = markerItem.z + 1
-                    _map.addMapItem(markerItem)
-                    coordsMarkerList.push(markerItem)
-                    //                    console.log(markerItem.coordinate)
-                }
-
-
-
-
-            }//for loop ends
-
-        }
-        else{
-            return
-        }
-
-
-        enableSpinbox = true
-        _map.center = coordsListtoDisplay[0]
-        coordsAdded()
-    }
-
-    function clearMarkers(){
-        for(var i=0;i<coordsMarkerList.length;i++){
-            _map.removeMapItem(coordsMarkerList[i])
-        }
-        coordsMarkerList = []
-    }
-
-    function clearMapItems(){
-        for(var i=0;i<coordsMarkerList.length;i++){
-            _map.removeMapItem(coordsMarkerList[i])
-        }
-
-        if(finalCoordMarkerList.length > 0){
-            for(var j=0; j< finalCoordMarkerList.length;j++){
-                var dummy = []
-                dummy = finalCoordMarkerList[j]
-                var dummy1 = []
-                dummy1 = finalDataDispList[j]
-                for(var k=0;k<dummy.length;k++){
-                    _map.removeMapItem(dummy[k])
-                    _map.removeMapItem(dummy1[k])
-                }
-            }
-        }
-        if(lineMarkersList.length > 0){
-            for(var l=0;l< lineMarkersList.length;l++){
-                _map.removeMapItem(lineMarkersList[l])
-                _map.removeMapItem(fileNameDataDisplayList[l])
-            }
-        }
-
-
-        coordsListtoDisplay = []
-        coordsMarkerList = []
-        finalCoordMarkerList = []
-        finalDataDispList = []
-        lineMarkersList = []
-        colorList = []
-        fileNameDataDisplayList = []
-
-    }
-
-    function changeMarkerSize(size){
-        for(var i=0;i<coordsMarkerList.length;i++){
-            coordsMarkerList[i].imageSize = size
-        }
-
-        //        clearMarkers()
-        //        for(var i=0;i< coordsListtoDisplay.length;i++){
-        //            var component = Qt.createComponent("MarkerItem.qml");
-        //            if (component.status === Component.Ready) {
-        //                var markerItem = component.createObject(_map);
-        //                markerItem.coordinate =  coordsListtoDisplay[i]
-        //                markerItem.index = i
-        //                markerItem.imageSize = size
-        //                _map.addMapItem(markerItem)
-        //                coordsMarkerList.push(markerItem)
-        //            }
-        //        }
-
-
-        //        _map.center = coordsListtoDisplay[0]
-        //        coordsAdded()
-
     }
 
     function dispCoords(coordsList,imageList,coordsTextList){
@@ -291,7 +181,8 @@ Map{
             if (comp.status === Component.Ready) {
                 var item = comp.createObject(_map);
                 item.imagePath = uavList[i].iconAddress
-                item.coordinate = uavList[i].currentLocn
+                item.visible  = true
+                item.coordinate = uavList[i].homeLocn
                 item.z = 5
                 vehicleIconList.push(item)
                 _map.addMapItem(item)
@@ -325,6 +216,8 @@ Map{
 
             displayGeoFence();
         }
+        else if(testCase == "Mid-Air Collision"){
+        }
 
     }
 
@@ -333,6 +226,37 @@ Map{
         currentCoord = coord
     }
 
+
+    function vehDataChangedList(coord,i){
+        vehicleIconList[i].coordinate = coord
+
+    }
+
+
+
+    function collisionPossible(i,j){
+
+        console.log(i,j,"collisionPossible")
+    }
+
+    function dispAvoidanceRect(){
+        var rectcomp = Qt.createComponent("DisplayRect.qml");
+        var dispitem;
+        if (rectcomp.status === Component.Ready) {
+            dispitem = rectcomp.createObject(_map);
+
+        }
+
+        dispitem.height = 75
+        dispitem.width = 800
+        dispitem.coord =  "D2 is made to loiter and give way for D1 based on priority.\n Different overrides like RTL/Loiter can be performed based on the uav capability"
+        dispitem.visible =true
+        _map.addMapItem(dispitem)
+        dispitem.anchors.top = landMarkersList[1].bottom
+        dispitem.anchors.topMargin = 300
+        dispitem. anchors.horizontalCenter = vehicleIconList[1].horizontalCenter
+        dispitem.z = vehicleIconList[1].z + 1
+    }
 
     function displayGeoFence(){
 
@@ -345,7 +269,7 @@ Map{
     function displayGeoFenceBreach(){
         _geoFence.color = "red"
         _geoFence.border.color = "red"
-        var dataDisplayList = []
+        dataDisplayList.clear()
         var comp = Qt.createComponent("DisplayRect.qml");
         var item;
         if (comp.status === Component.Ready) {
@@ -381,6 +305,8 @@ Map{
         dataDisplayList[0].anchors.topMargin = 10
         dataDisplayList[0]. anchors.horizontalCenter = item1.horizontalCenter
         dataDisplayList[0].z = item1.z + 1
+        geolandMarkersList.push(item1)
+        geolandMarkersList.push(item2)
         _controlWindow.sendUAVToLocn(c1)
 
     }
@@ -399,6 +325,59 @@ Map{
         showFlightPlan(plan3,"3")
     }
 
+
+    function clearGeofenceBreach(){
+
+        _geoFence.visible = false
+        //        _geoFence.path = []
+        for(var i=0; i<dataDisplayList.length;i++){
+            _map.removeMapItem(dataDisplayList[i])
+        }
+        for(var j=0; j<geolandMarkersList.length;j++){
+            _map.removeMapItem(geolandMarkersList[j])
+        }
+        dataDisplayList = []
+        geolandMarkersList = []
+    }
+
+    function clearNoflyZone(){
+
+        _noFlyZone.visible = false
+        _noFlyZone.path = []
+        _noflyzonetitlerect.visible = false
+        for(var i=0;i<lineMarkersList.length;i++){
+            _map.removeMapItem(lineMarkersList[i])
+        }
+        lineMarkersList = []
+        dispitemList = []
+    }
+
+    function clearAvoidance() {
+
+    }
+
+    function clearallitems(){
+        for(var i=0;i<vehicleIconList.length;i++){
+            _map.removeMapItem(vehicleIconList[i])
+        }
+        for(var j=0;j<idMarkersList.length;j++){
+            _map.removeMapItem(idMarkersList[j])
+        }
+        for(var k=0;k<pathMarkersList.length;k++){
+            _map.removeMapItem(pathMarkersList[k])
+        }
+        for(var l=0;l<landMarkersList.length;l++){
+            _map.removeMapItem(landMarkersList[l])
+        }
+        vehicleIconList = []
+        idMarkersList= []
+        pathMarkersList = []
+        landMarkersList = []
+
+        clearGeofenceBreach()
+        clearNoflyZone()
+        clearAvoidance()
+    }
 
     function showFlightPlan(flightPlan,index){
         var component = Qt.createComponent("MapLines.qml");
@@ -438,7 +417,7 @@ Map{
             dispitem. anchors.horizontalCenter = litem.horizontalCenter
             dispitem.z = litem.z + 1
         }
-
+        dispitemList.push(dispitem)
 
     }
 

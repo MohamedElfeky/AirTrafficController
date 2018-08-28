@@ -36,6 +36,7 @@
     <addaction name="actionDrone_Registration"/>
     <addaction name="actionGeoFence_Breach"/>
     <addaction name="actionNo_Fly_Zone"/>
+    <addaction name="actionMid_Air_Collision_Avoidance"/>
    </widget>
    <addaction name="menuTestCases"/>
   </widget>
@@ -61,6 +62,11 @@
   <action name="actionNo_Fly_Zone">
    <property name="text">
     <string>No-Fly Zone</string>
+   </property>
+  </action>
+  <action name="actionMid_Air_Collision_Avoidance">
+   <property name="text">
+    <string>Mid-Air Collision Avoidance</string>
    </property>
   </action>
  </widget>

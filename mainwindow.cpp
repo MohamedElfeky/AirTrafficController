@@ -9,7 +9,6 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->actionDrone_Registration->setVisible(false);
     setWindowTitle("Air Traffic Controller");
     showMap();
-    setUpDroneEnv(5);
 
 }
 
@@ -51,16 +50,9 @@ void MainWindow::showMap(){
 
 }
 
-void MainWindow::setUpDroneEnv(int numDrones)
-{
 
-    QList<QGeoCoordinate> homeLocns = getRandomHomeLocn(1300,800,numDrones+10,50,5);
-}
 
-QList<QGeoCoordinate> MainWindow::getRandomHomeLocn(qreal width, qreal height, qreal g, int seed, int numDrones)
-{
 
-}
 
 QVariantList MainWindow::generateRandomFlightPath(QGeoCoordinate home,int seed)
 {
@@ -158,20 +150,12 @@ void MainWindow::startSimulation()
 
 
 
+
+
 void MainWindow::goToNextLocn()
 {
 
-    //        qDebug() << uavListCpp[0]->currentLocn().distanceTo(uavListCpp[0]->nextLocn()) <<  "goToNextLocn";
-
-    //    if(uavListCpp[0]->nextLocn().altitude() -uavListCpp[0]->currentLocn().altitude() > 10  ){
-    //        qDebug() << uavListCpp[0]->currentLocn().altitude();
-    //        double alt = 10 + uavListCpp[0]->currentLocn().altitude();
-    //        uavListCpp[0]->currentLocn().setAltitude(alt);
-    //        uavListCpp[0]->nextLocn().setAltitude(alt+10);
-    //        QMetaObject::invokeMethod(flightmapitem,"vehDataChanged",Q_ARG(QVariant,qVariantFromValue(uavListCpp[0]->currentLocn())));
-
-    //    }
-    /*else*/ if(uavListCpp[0]->currentLocn().distanceTo(uavListCpp[0]->nextLocn()) > 10){
+    if(uavListCpp[0]->currentLocn().distanceTo(uavListCpp[0]->nextLocn()) > 10){
         QGeoCoordinate nLocn;
         double dist = 10;
         double azim = uavListCpp[0]->currentLocn().azimuthTo(uavListCpp[0]->nextLocn());
@@ -212,6 +196,8 @@ void MainWindow::goToNextLocn()
 }
 
 
+
+
 bool MainWindow::checkLocnLiesinGeoFence(QGeoCoordinate coord)
 {
 
@@ -239,6 +225,7 @@ void MainWindow::sendUAVToLocn(QVariant coordvar)
 void MainWindow::on_actionGeoFence_Breach_triggered()
 {
 
+    QMetaObject::invokeMethod(flightmapitem,"clearallitems");
     UAVList.clear();
     uavListCpp.clear();
     setCurrentTestCase("GeoFence Breach");
@@ -249,7 +236,7 @@ void MainWindow::on_actionGeoFence_Breach_triggered()
     geoFenceUav->setHomeLocn(QVariant::fromValue(homeLocn));
     geoFenceUav->setCurrentLocn(homeLocn);
     geoFenceUav->setID(1);
-    geoFenceUav->setIconAddress("qrc:/qml_maps/icons/Insight yellow icon.png");
+    geoFenceUav->setIconAddress("qrc:/qml_maps/icons/D2.png");
     geoFenceUav->setUavType(UAVNs::UAV::multiCopter);
     QVariantList flightPath;
     flightPath.push_back(geoFenceUav->homeLocn());
@@ -315,6 +302,10 @@ void MainWindow::onDroneRegnFormSubmitted()
 
 void MainWindow::on_actionNo_Fly_Zone_triggered()
 {
+    QMetaObject::invokeMethod(flightmapitem,"clearallitems");
+
+    setCurrentTestCase("NO-FlyZone");
+    flightmapitem->setProperty("NO-FlyZone",currentTestCase());
 
     QFile flightPlanFile;
     QString path = QDir::homePath() + "/AirTrafficController/nofly.txt";
@@ -381,4 +372,245 @@ QVariantList MainWindow::readFlightPlanfromfile(QString filename)
     file.close();
     return path;
 
+}
+
+
+
+void MainWindow::on_actionMid_Air_Collision_Avoidance_triggered()
+{
+    QMetaObject::invokeMethod(flightmapitem,"clearallitems");
+
+    UAVList.clear();
+    uavListCpp.clear();
+    collisionPossible = false;
+    setCurrentTestCase("Mid-Air Collision");
+    flightmapitem->setProperty("Mid-Air Collision",currentTestCase());
+
+    qDebug() << "mid air collision";
+    //    UAVNs::UAV *uav4 = new UAVNs::UAV();
+
+    QVariantList flpath;
+    flpath.push_back(qVariantFromValue(QGeoCoordinate(42.386151,-83.039228)));
+    flpath.push_back(qVariantFromValue(QGeoCoordinate(42.3851446,-83.0413628)));
+    UAVNs::UAV *uav1 = createUAV(1,QGeoCoordinate(42.386151,-83.039228),"qrc:/qml_maps/icons/airambulance.png",flpath);
+
+    QVariantList flpath2,flpath3;
+    flpath2 = readFlightPlanfromfile(QDir::homePath() + "/AirTrafficController/fplan1.txt");
+    UAVNs::UAV *uav2 = createUAV(2,flpath2[0].value<QGeoCoordinate>(),"qrc:/qml_maps/icons/D2.png",flpath2);
+
+    flpath3.push_back( qVariantFromValue(QGeoCoordinate(42.382850,-83.041913)));
+    flpath3.push_back(qVariantFromValue(QGeoCoordinate(42.385932,-83.043022)) );
+
+    UAVNs::UAV *uav3 = createUAV(3,flpath3[0].value<QGeoCoordinate>(),"qrc:/qml_maps/icons/Insight yellow icon.png",flpath3);
+
+    UAVList.append(uav1);
+    UAVList.append(uav2);
+    UAVList.append(uav3);
+    uavListCpp.push_back(uav1);
+    uavListCpp.push_back(uav2);
+    uavListCpp.push_back(uav3);
+
+    flightmapitem->setProperty("uavList",QVariant::fromValue(UAVList));
+    QMetaObject::invokeMethod(flightmapitem,"dispUAVsFromList");
+
+    startSimulationTraffic();
+
+}
+
+
+UAVNs::UAV *MainWindow::createUAV(int id, QGeoCoordinate home, QString iconAddr, QVariantList flpath)
+{
+    UAVNs::UAV *uav1 = new UAVNs::UAV();
+    uav1->setID(id);
+    uav1->setHomeLocn(qVariantFromValue(home));
+    uav1->setIconAddress(iconAddr);
+    uav1->setUavType(UAVNs::UAV::multiCopter);
+
+    uav1->setFlightPath(flpath);
+    uav1->setCurrentLocn(home);
+    uav1->setNextLocn(flpath[1].value<QGeoCoordinate>());
+    uav1->setDestnLocn(flpath.last().value<QGeoCoordinate>());
+    uav1->setHorSpeed(5);
+    uav1->setIndexReached(0);
+    return uav1;
+}
+
+
+
+void MainWindow::startSimulationTraffic()
+{
+
+    qDebug() << "startSimulationTraffic";
+    if(midAirTimer1 == Q_NULLPTR){
+        midAirTimer1 = new QTimer(this);
+    }
+    if(midAirTimer2 == Q_NULLPTR){
+        midAirTimer2 = new QTimer(this);
+    }
+    if(midAirTimer3 == Q_NULLPTR){
+        midAirTimer3 = new QTimer(this);
+    }
+    connect(midAirTimer1,SIGNAL(timeout()),this,SLOT(goToNextLocnMidAir1()));
+    midAirTimer1->start(1000);
+
+    connect(midAirTimer2,SIGNAL(timeout()),this,SLOT(goToNextLocnMidAir2()));
+    midAirTimer2->start(1000);
+    connect(midAirTimer3,SIGNAL(timeout()),this,SLOT(goToNextLocnMidAir3()));
+    midAirTimer3->start(1000);
+}
+
+void MainWindow::goToNextLocnMidAir1()
+{
+
+    //    for(int i=0;i<1;i++){
+    int i=0;
+    if(uavListCpp[i]->currentLocn().distanceTo(uavListCpp[i]->nextLocn()) > 10){
+        QGeoCoordinate nLocn;
+        double dist = 10;
+        double azim = uavListCpp[i]->currentLocn().azimuthTo(uavListCpp[i]->nextLocn());
+        nLocn = uavListCpp[i]->currentLocn().atDistanceAndAzimuth(dist,azim);
+        uavListCpp[0]->setCurrentLocn(nLocn);
+        QMetaObject::invokeMethod(flightmapitem,"vehDataChangedList",Q_ARG(QVariant,qVariantFromValue(nLocn)),Q_ARG(QVariant,qVariantFromValue(i)));
+        checkIfDroneLiesWithinDia(30);
+        if(nLocn.distanceTo(uavListCpp[i]->destnLocn()) < 10){
+            midAirTimer1->stop();
+
+        }
+    }
+    else{
+        qDebug() << "reached" << uavListCpp[0]->indexReached();
+
+        if(uavListCpp[i]->indexReached() +1 < uavListCpp[i]->flightPath().length()){
+
+            uavListCpp[i]->setNextLocn(uavListCpp[i]->flightPath()[uavListCpp[i]->indexReached() +1].value<QGeoCoordinate>());
+            uavListCpp[i]->setIndexReached(uavListCpp[i]->indexReached() +1);
+        }
+        else{
+            midAirTimer1->stop();
+            qDebug() << "reached destn";
+        }
+    }
+
+    //    }
+}
+
+void MainWindow::goToNextLocnMidAir2()
+{
+    //    qDebug() << "goToNextLocnMidAir2";
+    //    for(int i=0;i<1;i++){
+    int i=1;
+    if(uavListCpp[i]->currentLocn().distanceTo(uavListCpp[i]->nextLocn()) > 10){
+        QGeoCoordinate nLocn;
+        double dist = 10;
+        double azim = uavListCpp[i]->currentLocn().azimuthTo(uavListCpp[i]->nextLocn());
+        nLocn = uavListCpp[i]->currentLocn().atDistanceAndAzimuth(dist,azim);
+        uavListCpp[i]->setCurrentLocn(nLocn);
+        QMetaObject::invokeMethod(flightmapitem,"vehDataChangedList",Q_ARG(QVariant,qVariantFromValue(nLocn)),Q_ARG(QVariant,qVariantFromValue(i)));
+        checkIfDroneLiesWithinDia(30);
+        if(nLocn.distanceTo(uavListCpp[i]->destnLocn()) < 10){
+            midAirTimer2->stop();
+            qDebug() << "reached destn";
+
+        }
+    }
+    else{
+        qDebug() << "reached" << uavListCpp[i]->indexReached();
+
+        if(uavListCpp[i]->indexReached() +1 < uavListCpp[i]->flightPath().length()){
+
+            uavListCpp[i]->setNextLocn(uavListCpp[i]->flightPath()[uavListCpp[i]->indexReached() +1].value<QGeoCoordinate>());
+            uavListCpp[i]->setIndexReached(uavListCpp[i]->indexReached() +1);
+        }
+        else{
+            midAirTimer2->stop();
+            qDebug() << "reached destn";
+        }
+
+    }
+
+
+
+}
+
+void MainWindow::goToNextLocnMidAir3()
+{
+    //    for(int i=0;i<1;i++){
+    int i=2;
+    if(uavListCpp[i]->currentLocn().distanceTo(uavListCpp[i]->nextLocn()) > 10){
+        QGeoCoordinate nLocn;
+        double dist = 10;
+        double azim = uavListCpp[i]->currentLocn().azimuthTo(uavListCpp[i]->nextLocn());
+        nLocn = uavListCpp[i]->currentLocn().atDistanceAndAzimuth(dist,azim);
+        uavListCpp[i]->setCurrentLocn(nLocn);
+        QMetaObject::invokeMethod(flightmapitem,"vehDataChangedList",Q_ARG(QVariant,qVariantFromValue(nLocn)),Q_ARG(QVariant,qVariantFromValue(i)));
+        checkIfDroneLiesWithinDia(30);
+        if(nLocn.distanceTo(uavListCpp[i]->destnLocn()) < 10){
+            midAirTimer3->stop();
+            qDebug() << "reached destn";
+
+        }
+    }
+    else{
+        qDebug() << "reached" << uavListCpp[i]->indexReached();
+
+        if(uavListCpp[i]->indexReached() +1 < uavListCpp[i]->flightPath().length()){
+
+            uavListCpp[i]->setNextLocn(uavListCpp[i]->flightPath()[uavListCpp[i]->indexReached() +1].value<QGeoCoordinate>());
+            uavListCpp[i]->setIndexReached(uavListCpp[i]->indexReached() +1);
+        }
+        else{
+            midAirTimer3->stop();
+            qDebug() << "reached destn";
+        }
+
+    }
+}
+
+
+
+void MainWindow::checkIfDroneLiesWithinDia(float dia)
+{
+    //0 1
+
+    if(!collisionPossible){
+        dia =80;
+        if(uavListCpp[0]->currentLocn().distanceTo(uavListCpp[1]->currentLocn()) < dia){
+
+            qDebug() << "01";
+            handleAvoidance(0,1);
+        }
+        //0 2
+        if(uavListCpp[0]->currentLocn().distanceTo(uavListCpp[2]->currentLocn()) < dia){
+            qDebug() << "02";
+            handleAvoidance(0,2);
+        }
+        // 1 2
+        if(uavListCpp[1]->currentLocn().distanceTo(uavListCpp[2]->currentLocn()) < dia){
+            qDebug() << "12";
+            handleAvoidance(1,2);
+        }
+    }
+
+}
+
+void MainWindow::handleAvoidance(int i, int j)
+{
+    qDebug() << "handleAvoidance" << i << j;
+    midAirTimer2->stop();
+    collisionPossible = true;
+    if(collTimer == Q_NULLPTR){
+        collTimer = new QTimer(this);
+        collTimer->setInterval(5000);
+        collTimer->setSingleShot(true);
+        connect(collTimer,SIGNAL(timeout()),this,SLOT(restartDrone()));
+    }
+    collTimer->start();
+    QMetaObject::invokeMethod(flightmapitem,"dispAvoidanceRect");
+}
+
+void MainWindow::restartDrone()
+{
+    qDebug() << "restartDrone";
+    midAirTimer2->start();
+    collisionPossible = true;
 }

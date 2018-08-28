@@ -49,10 +49,10 @@ public:
     QWidget *mapwidget = Q_NULLPTR;
     QQuickItem *flightmapitem = Q_NULLPTR;
     QDesktopWidget *desktop = QApplication::desktop();
-    void setUpDroneEnv(int numDrones);
-    QList<QGeoCoordinate> getRandomHomeLocn(qreal width, qreal height, qreal g , int seed, int numDrones);
     QVariantList generateRandomFlightPath(QGeoCoordinate home,int seed);
     Q_INVOKABLE void startSimulation();
+
+    Q_INVOKABLE void startSimulationTraffic();
 
     Q_INVOKABLE bool checkLocnLiesinGeoFence(QGeoCoordinate coord);
     Q_INVOKABLE void sendUAVToLocn(QVariant coordvar);
@@ -64,18 +64,30 @@ public:
 
     DroneRegistrationForm *regn = Q_NULLPTR;
     Q_INVOKABLE QVariantList readFlightPlanfromfile(QString filename);
-//    std::mt19937 MyRNG;
-//    uint32_t seed_val;
-//    MyRNG rng;
+    Q_INVOKABLE UAVNs::UAV * createUAV(int id, QGeoCoordinate home, QString iconAddr, QVariantList flpath );
 
+
+    QMap<QTimer,int> timerList;
+    QTimer *midAirTimer1 =Q_NULLPTR;
+    QTimer *midAirTimer2 =Q_NULLPTR;
+    QTimer *midAirTimer3 =Q_NULLPTR;
+    QTimer *collTimer = Q_NULLPTR;
     QString currentTestCase() const
     {
         return m_currentTestCase;
     }
 
     bool geofenceBreached = false;
+    bool collisionPossible = false;
+
+    void checkIfDroneLiesWithinDia(float dia);
+    void handleAvoidance(int i, int j);
 public slots:
     void goToNextLocn();
+    void goToNextLocnMidAir1();
+    void goToNextLocnMidAir2();
+    void goToNextLocnMidAir3();
+    void restartDrone();
     void setCurrentTestCase(QString currentTestCase)
     {
         if (m_currentTestCase == currentTestCase)
@@ -96,6 +108,8 @@ private slots:
     void onDroneRegnFormSubmitted();
 
     void on_actionNo_Fly_Zone_triggered();
+
+    void on_actionMid_Air_Collision_Avoidance_triggered();
 
 private:
     Ui::MainWindow *ui;

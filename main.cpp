@@ -22,6 +22,13 @@ int main(int argc, char *argv[])
         atcDir.mkpath(atcDir.path());
     }
 
+    QFile fplan1(atcDir.path() + "/fplan1.txt");
+    if(!fplan1.exists())
+        QFile::copy(QString(qApp->applicationDirPath() + "/fplan1.txt"), QString(atcDir.path() + "/fplan1.txt"));
+
+    QFile nofly(atcDir.path() + "/nofly.txt");
+    if(!nofly.exists())
+        QFile::copy(QString(qApp->applicationDirPath() + "/nofly.txt"), QString(atcDir.path() + "/nofly.txt"));
 
     MainWindow w;
     w.show();

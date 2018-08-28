@@ -16,7 +16,7 @@ MapQuickItem {
         width: 1.1*imageWidth
         height: 1.1*imageHeight
         radius: 0.5*width
-        color: "yellow"
+        color: "transparent"
         Image {
             id: vehicleIconImage
             anchors.horizontalCenter: parent.horizontalCenter

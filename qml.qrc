@@ -13,5 +13,8 @@
         <file>qml_maps/VehicleIcon.qml</file>
         <file>qml_maps/VehicleData.qml</file>
         <file>qml_maps/LandingItem.qml</file>
+        <file>qml_maps/icons/airambulance.png</file>
+        <file>qml_maps/icons/D1.png</file>
+        <file>qml_maps/icons/D2.png</file>
     </qresource>
 </RCC>
