@@ -269,7 +269,7 @@ Map{
     function displayGeoFenceBreach(){
         _geoFence.color = "red"
         _geoFence.border.color = "red"
-        dataDisplayList.clear()
+        dataDisplayList = []
         var comp = Qt.createComponent("DisplayRect.qml");
         var item;
         if (comp.status === Component.Ready) {

@@ -16,5 +16,6 @@
         <file>qml_maps/icons/airambulance.png</file>
         <file>qml_maps/icons/D1.png</file>
         <file>qml_maps/icons/D2.png</file>
+        <file>qml_maps/icons/imageedit_1_3684434905.png</file>
     </qresource>
 </RCC>

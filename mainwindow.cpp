@@ -401,7 +401,7 @@ void MainWindow::on_actionMid_Air_Collision_Avoidance_triggered()
     flpath3.push_back( qVariantFromValue(QGeoCoordinate(42.382850,-83.041913)));
     flpath3.push_back(qVariantFromValue(QGeoCoordinate(42.385932,-83.043022)) );
 
-    UAVNs::UAV *uav3 = createUAV(3,flpath3[0].value<QGeoCoordinate>(),"qrc:/qml_maps/icons/Insight yellow icon.png",flpath3);
+    UAVNs::UAV *uav3 = createUAV(3,flpath3[0].value<QGeoCoordinate>(),"qrc:/qml_maps/icons/imageedit_1_3684434905.png",flpath3);
 
     UAVList.append(uav1);
     UAVList.append(uav2);
